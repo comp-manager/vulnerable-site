@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Available Quizzes - ExamHub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="navbar">
+            <div class="logo">📚 ExamHub</div>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/dashboard">Dashboard</a>
+                <a href="/quizzes">Take Quiz</a>
+                <a href="/scores">My Scores</a>
+                <a href="/logout">Logout</a>
+            </div>
+        </div>
+
+        <div class="content">
+            <h1>Available Quizzes</h1>
+            <div class="quiz-grid">
+                {% for id, quiz in quizzes.items() %}
+                <div class="quiz-card">
+                    <h3>{{ quiz['title'] }}</h3>
+                    <div class="quiz-info">
+                        <span>⏱️ {{ quiz['duration'] // 60 }} minutes</span>
+                        <span>📝 {{ quiz['questions']|length }} questions</span>
+                    </div>
+                    <a href="/exam/{{ id }}" class="btn">Start Quiz</a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</body>
+</html>

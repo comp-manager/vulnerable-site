@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ quiz['title'] }} - ExamHub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="exam-header">
+            <h1>{{ quiz['title'] }}</h1>
+            <div class="timer" id="timer">Loading...</div>
+        </div>
+
+        <div class="exam-content">
+            <div class="warning">
+                ⚠️ Once you start, the timer cannot be paused. Make sure you have enough time!
+            </div>
+
+            <!-- VULNERABILITY: Form contains quiz_id and duration as hidden fields -->
+            <form method="POST" action="/submit_exam" id="examForm">
+                <input type="hidden" name="quiz_id" value="{{ quiz_id }}">
+                <input type="hidden" name="session_id" value="{{ session_id }}">
+                <!-- VULNERABILITY: Duration sent to client (can be modified) -->
+                <input type="hidden" name="duration" id="duration" value="{{ quiz['duration'] }}">
+                <!-- VULNERABILITY: Start time sent to client -->
+                <input type="hidden" name="start_time" id="start_time" value="">
+                
+                {% for question in quiz['questions'] %}
+                <div class="question">
+                    <h3>Question {{ loop.index }}: {{ question['question'] }}</h3>
+                    <div class="options">
+                        {% for option in question['options'] %}
+                        <label class="option">
+                            <input type="radio" name="q{{ question['id'] }}" value="{{ loop.index0 }}" required>
+                            <span>{{ option }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+
+                <button type="submit" class="submit-btn">Submit Exam</button>
+            </form>
+
+            <!-- VULNERABILITY: Correct answers hidden in HTML comments -->
+            {% for question in quiz['questions'] %}
+            <!-- Question {{ question['id'] }}: Correct answer is option {{ question['correct'] + 1 }} which is {{ question['options'][question['correct']] }} -->
+            {% endfor %}
+
+            <!-- VULNERABILITY: Answers in hidden div -->
+            <div class="hidden-answers" style="display: none;">
+                {% for question in quiz['questions'] %}
+                <div data-question-id="{{ question['id'] }}" data-correct="{{ question['correct'] }}" data-answer="{{ question['options'][question['correct']] }}"></div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // VULNERABILITY: Timer runs client-side (can be paused in DevTools)
+        let duration = {{ quiz['duration'] }};
+        let startTime = Date.now();
+        document.getElementById('start_time').value = startTime;
+
+        function updateTimer() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const remaining = duration - elapsed;
+
+            if (remaining <= 0) {
+                document.getElementById('timer').textContent = "Time's Up!";
+                document.getElementById('timer').style.background = '#e74c3c';
+                // VULNERABILITY: Timer expires but form can still be submitted
+                // No actual prevention of submission
+            } else {
+                const minutes = Math.floor(remaining / 60);
+                const seconds = remaining % 60;
+                document.getElementById('timer').textContent = 
+                    `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }
+        }
+
+        // Update timer every second
+        setInterval(updateTimer, 1000);
+        updateTimer();
+
+        // VULNERABILITY: Console log reveals answer locations
+        console.log("Hint: Check the page source or inspect the .hidden-answers div 😉");
+        console.log("Try: document.querySelectorAll('.hidden-answers div')");
+    </script>
+</body>
+</html>

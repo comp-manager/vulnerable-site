@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard - ExamHub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="navbar">
+            <div class="logo">📚 ExamHub</div>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/dashboard">Dashboard</a>
+                <a href="/quizzes">Take Quiz</a>
+                <a href="/scores">My Scores</a>
+                <a href="/logout">Logout</a>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="dashboard-content">
+            <h1>Welcome, {{ user['name'] }}! 👋</h1>
+            
+            <div class="stats">
+                <div class="stat-card">
+                    <h3>{{ user['scores']|length }}</h3>
+                    <p>Quizzes Completed</p>
+                </div>
+                <div class="stat-card">
+                    <h3>{{ quizzes|length }}</h3>
+                    <p>Available Quizzes</p>
+                </div>
+                <div class="stat-card">
+                    <h3>{{ "%.1f"|format(avg_score) }}%</h3>
+                    <p>Average Score</p>
+                </div>
+            </div>
+
+            <h2 style="margin-bottom: 20px; color: #667eea;">Quick Actions</h2>
+            <a href="/quizzes" class="btn">Browse Quizzes</a>
+            <a href="/scores" class="btn">View My Scores</a>
+        </div>
+    </div>
+</body>
+</html>

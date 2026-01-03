@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ExamHub - Online Testing Platform</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="navbar">
+            <div class="logo">📚 ExamHub</div>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                {% if 'username' in session %}
+                    <a href="/dashboard">Dashboard</a>
+                    <a href="/quizzes">Take Quiz</a>
+                    <a href="/scores">My Scores</a>
+                    <a href="/logout">Logout</a>
+                    <div class="user-info">👤 {{ session['username'] }}</div>
+                {% else %}
+                    <a href="/login" class="btn-nav">Login</a>
+                {% endif %}
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="hero">
+            <h1>Welcome to ExamHub</h1>
+            <p class="subtitle">The leading online examination platform for students and educators</p>
+            {% if 'username' not in session %}
+                <a href="/login" class="btn btn-large">Get Started</a>
+            {% else %}
+                <a href="/quizzes" class="btn btn-large">Browse Quizzes</a>
+            {% endif %}
+        </div>
+
+        <div class="features">
+            <div class="feature-card">
+                <div class="emoji">⏱️</div>
+                <h3>Timed Exams</h3>
+                <p>Take exams with real-time countdown timers to simulate actual testing conditions</p>
+            </div>
+            <div class="feature-card">
+                <div class="emoji">📊</div>
+                <h3>Instant Results</h3>
+                <p>Get your scores immediately after submission with detailed feedback</p>
+            </div>
+            <div class="feature-card">
+                <div class="emoji">🏆</div>
+                <h3>Track Progress</h3>
+                <p>Monitor your performance across multiple quizzes and subjects</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quiz Results - ExamHub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="navbar">
+            <div class="logo">📚 ExamHub</div>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/dashboard">Dashboard</a>
+                <a href="/quizzes">Take Quiz</a>
+                <a href="/scores">My Scores</a>
+                <a href="/logout">Logout</a>
+            </div>
+        </div>
+
+        <div class="results-content">
+            <div class="results-card">
+                <h1>Quiz Completed! 🎉</h1>
+                <h2>{{ quiz['title'] }}</h2>
+                
+                <div class="score-display">
+                    <div class="score-circle">
+                        <h3>{{ "%.1f"|format(score) }}%</h3>
+                    </div>
+                </div>
+
+                <div class="score-details">
+                    <p><strong>Correct Answers:</strong> {{ correct }} / {{ total }}</p>
+                    <p><strong>Incorrect:</strong> {{ total - correct }}</p>
+                </div>
+
+                <div class="actions">
+                    <a href="/quizzes" class="btn">Take Another Quiz</a>
+                    <a href="/scores" class="btn">View All Scores</a>
+                    <a href="/dashboard" class="btn">Back to Dashboard</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Scores - ExamHub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="navbar">
+            <div class="logo">📚 ExamHub</div>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/dashboard">Dashboard</a>
+                <a href="/quizzes">Take Quiz</a>
+                <a href="/scores">My Scores</a>
+                <a href="/logout">Logout</a>
+            </div>
+        </div>
+
+        <div class="content">
+            <h1>My Score History</h1>
+            
+            {% if user['scores'] %}
+            <div class="scores-list">
+                {% for score in user['scores'] %}
+                <div class="score-item">
+                    <span class="score-label">Attempt #{{ loop.index }}</span>
+                    <span class="score-value">{{ "%.1f"|format(score) }}%</span>
+                    <span class="score-badge 
+                        {% if score >= 80 %}badge-excellent
+                        {% elif score >= 60 %}badge-good
+                        {% else %}badge-needswork
+                        {% endif %}">
+                        {% if score >= 80 %}Excellent!
+                        {% elif score >= 60 %}Good Job
+                        {% else %}Needs Work
+                        {% endif %}
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <p>No quizzes taken yet. <a href="/quizzes">Start your first quiz!</a></p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

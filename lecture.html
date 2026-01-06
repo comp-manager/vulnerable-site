@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Exam Platform - Business Logic Vulnerabilities</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        .presentation {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        .slide {
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .slide.active {
+            display: flex;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .slide h1 {
+            font-size: 4rem;
+            margin-bottom: 30px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .slide h2 {
+            font-size: 3rem;
+            margin-bottom: 40px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .slide h3 {
+            font-size: 2rem;
+            margin-bottom: 30px;
+            text-align: left;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .slide p, .slide li {
+            font-size: 1.5rem;
+            line-height: 1.8;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .subtitle {
+            font-size: 2rem;
+            color: #ffd700;
+            text-align: center;
+        }
+
+        .content {
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        ul li {
+            padding-left: 40px;
+            position: relative;
+            margin-bottom: 25px;
+        }
+
+        ul li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #ffd700;
+            font-weight: bold;
+            font-size: 1.8rem;
+        }
+
+        .highlight {
+            background: rgba(255, 215, 0, 0.3);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .warning {
+            background: rgba(231, 76, 60, 0.3);
+            border-left: 5px solid #e74c3c;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .code-block {
+            background: #2d2d2d;
+            padding: 30px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 1.2rem;
+            margin: 20px 0;
+            border-left: 5px solid #ffd700;
+            overflow-x: auto;
+        }
+
+        .controls {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            gap: 15px;
+            z-index: 1000;
+        }
+
+        .controls button {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid #fff;
+            color: #fff;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .controls button:hover {
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(1.05);
+        }
+
+        .slide-number {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            font-size: 1.2rem;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px 20px;
+            border-radius: 20px;
+        }
+
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            width: 100%;
+        }
+
+        .emoji {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        .speaker-notes {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 15px 30px;
+            border-radius: 10px;
+            max-width: 80%;
+            display: none;
+            font-size: 1rem;
+            line-height: 1.5;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .speaker-notes.show {
+            display: block;
+        }
+
+        .notes-toggle {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid #fff;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .case-study {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            border-radius: 10px;
+            border-left: 5px solid #e74c3c;
+        }
+
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .bad {
+            background: rgba(231, 76, 60, 0.3);
+            padding: 20px;
+            border-radius: 10px;
+            border: 3px solid #e74c3c;
+        }
+
+        .good {
+            background: rgba(46, 204, 113, 0.3);
+            padding: 20px;
+            border-radius: 10px;
+            border: 3px solid #2ecc71;
+        }
+
+        .lab-instruction {
+            background: rgba(52, 152, 219, 0.3);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 5px solid #3498db;
+            margin: 15px 0;
+        }
+
+        .severity-table {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .severity-high {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .severity-medium {
+            color: #f39c12;
+            font-weight: bold;
+        }
+
+        .severity-low {
+            color: #3498db;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="presentation" id="presentation">
+        <!-- Slide 1: Title -->
+        <div class="slide active" data-notes="Welcome everyone! Today we're exploring business logic vulnerabilities through an online exam platform. These aren't technical exploits like SQL injection - these are flaws in how the application thinks and makes decisions.">
+            <h1>Online Exam Platform</h1>
+            <p class="subtitle">Business Logic Vulnerabilities</p>
+            <p style="margin-top: 40px; font-size: 1.8rem;">Ethical Hacking Course</p>
+            <p style="font-size: 1.3rem; color: #ffd700;">60 Minute Interactive Session</p>
+        </div>
+
+        <!-- Slide 2: The Problem -->
+        <div class="slide" data-notes="Think about all the online tests you've taken. What if you could see answers before submitting? Pause the timer? Submit hours after time expires? These aren't hypothetical - they exist in real systems.">
+            <h2>The Problem 🚨</h2>
+            <div class="content">
+                <p style="font-size: 2rem; text-align: center; margin-bottom: 40px;">What if you could...</p>
+                <ul>
+                    <li>See all the answers before submitting?</li>
+                    <li>Pause the exam timer indefinitely?</li>
+                    <li>Submit your exam hours after time expires?</li>
+                    <li>Retake the same exam unlimited times?</li>
+                    <li>Switch to an easier exam mid-test?</li>
+                </ul>
+                <p style="margin-top: 40px; text-align: center; font-size: 1.8rem; color: #ffd700;">
+                    <strong>These vulnerabilities exist in REAL applications!</strong>
+                </p>
+            </div>
+        </div>
+
+        <!-- Slide 3: Why This Matters -->
+        <div class="slide" data-notes="Online exams are everywhere now, especially after COVID. Universities, certifications, job applications, even driver's licenses. If these systems are broken, unqualified people get credentials they shouldn't have.">
+            <h2>Why This Matters</h2>
+            <div class="content">
+                <h3>Online Exams Are Everywhere:</h3>
+                <div class="two-column">
+                    <div>
+                        <ul>
+                            <li>University exams</li>
+                            <li>Professional certifications</li>
+                            <li>Job application tests</li>
+                            <li>Driver's license exams</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <ul>
+                            <li>Medical licensing</li>
+                            <li>Security clearances</li>
+                            <li>Financial certifications</li>
+                            <li>Legal bar exams</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="warning" style="margin-top: 40px;">
+                    <p style="font-size: 1.6rem;"><strong>If these systems fail:</strong> Unqualified people in critical roles, fraudulent credentials, compromised safety, legal liability</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: What Are Business Logic Flaws? -->
+        <div class="slide" data-notes="Business logic vulnerabilities are different from technical ones. The CODE works fine - it's the LOGIC that's broken. It's like a restaurant asking customers 'how much do you want to pay?' instead of telling them the price.">
+            <h2>What Are Business Logic Flaws?</h2>
+            <div class="content">
+                <p style="font-size: 1.8rem; margin-bottom: 40px;">Flaws in application design that allow unintended behavior</p>
+                <div style="background: rgba(255,215,0,0.2); padding: 30px; border-radius: 10px; margin: 30px 0;">
+                    <p style="font-size: 1.6rem; text-align: center;"><strong>Key Difference:</strong></p>
+                    <p style="font-size: 1.4rem; text-align: center; margin-top: 15px;">The code works as written, but the logic is fundamentally flawed</p>
+                </div>
+                <ul>
+                    <li><strong>Technical Vulns:</strong> SQL injection, XSS, buffer overflows</li>
+                    <li><strong>Business Logic:</strong> Application trusts what it shouldn't</li>
+                    <li>Hard to detect with automated scanners</li>
+                    <li>Require human reasoning to find</li>
+                    <li>Often more dangerous than technical flaws</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Slide 5: The Restaurant Analogy -->
+        <div class="slide" data-notes="Here's a perfect analogy. Imagine a restaurant that asks YOU how much you want to pay. You could be honest... or you could say one cent. If they accept it, that's business logic vulnerability.">
+            <h2>The Restaurant Analogy 🍔</h2>
+            <div class="content">
+                <div class="emoji">🍽️</div>
+                <p style="font-size: 2rem; text-align: center; margin-bottom: 40px;">Imagine this scenario...</p>
+                <ul>
+                    <li>You order a $15 burger</li>
+                    <li>The waiter brings the check</li>
+                    <li>Instead of telling you the price...</li>
+                    <li class="highlight">They ask: "How much do you want to pay?"</li>
+                    <li>You could say $15... or $0.01</li>
+                    <li>If they accept it? <strong>That's business logic vulnerability!</strong></li>
+                </ul>
+                <p style="margin-top: 40px; text-align: center; font-size: 1.6rem; color: #ffd700;">
+                    The system WORKS, but the LOGIC is broken
+                </p>
+            </div>
+        </div>
+
+        <!-- Slide 6: The Application -->
+        <div class="slide" data-notes="We've built ExamHub - an intentionally vulnerable online exam platform. It looks professional and works well, but it has 8 critical security flaws. Students will exploit all of them today.">
+            <h2>Meet ExamHub 📚</h2>
+            <div class="content">
+                <h3>Our Vulnerable Application</h3>
+                <div class="two-column">
+                    <div>
+                        <p><strong>Features:</strong></p>
+                        <ul>
+                            <li>User authentication</li>
+                            <li>Multiple-choice quizzes</li>
+                            <li>Timed examinations</li>
+                            <li>Instant scoring</li>
+                            <li>Score tracking</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <p><strong>Test Accounts:</strong></p>
+                        <ul>
+                            <li>student1 / pass123</li>
+                            <li>student2 / pass456</li>
+                            <li>teacher / teacher123</li>
+                        </ul>
+                        <p style="margin-top: 20px;"><strong>Quizzes:</strong></p>
+                        <ul>
+                            <li>Python Basics (5 min)</li>
+                            <li>Web Security (10 min)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: The 8 Vulnerabilities -->
+        <div class="slide" data-notes="Here are the 8 critical vulnerabilities we'll explore. Some are easy to exploit - literally 30 seconds. Others require more skill. Together, they completely compromise the exam system.">
+            <h2>The 8 Critical Flaws</h2>
+            <div class="content">
+                <div class="severity-table">
+                    <ul style="font-size: 1.4rem;">
+                        <li><span class="severity-high">🔴 CRITICAL:</span> Answers visible in page source</li>
+                        <li><span class="severity-high">🔴 HIGH:</span> Client-side timer (can be paused)</li>
+                        <li><span class="severity-high">🔴 HIGH:</span> No server-side time validation</li>
+                        <li><span class="severity-medium">🟡 MEDIUM:</span> Duration sent as hidden field</li>
+                        <li><span class="severity-medium">🟡 MEDIUM:</span> Quiz ID manipulation (IDOR)</li>
+                        <li><span class="severity-medium">🟡 MEDIUM:</span> Unlimited retakes</li>
+                        <li><span class="severity-low">🔵 LOW:</span> Weak session management</li>
+                        <li><span class="severity-high">🔴 HIGH:</span> No answer encryption</li>
+                    </ul>
+                </div>
+                <p style="margin-top: 30px; text-align: center; font-size: 1.4rem;">Combined CVSS Score: <span class="severity-high">8.5 - CRITICAL</span></p>
+            </div>
+        </div>
+
+        <!-- Slide 8: Vulnerability 1 - Answers in Source -->
+        <div class="slide" data-notes="The most obvious flaw: all correct answers are sent to your browser. They're in HTML comments and hidden divs. Press Ctrl+U to view source, search for 'answer', and you'll find them all. Takes 30 seconds.">
+            <h2>Vuln #1: Answers in Page Source</h2>
+            <div class="content">
+                <div class="lab-instruction">
+                    <p><strong>The Flaw:</strong> Correct answers sent to client browser</p>
+                </div>
+                <h3>How to Exploit:</h3>
+                <ul>
+                    <li>Start any quiz</li>
+                    <li>Right-click → "View Page Source" (or Ctrl+U)</li>
+                    <li>Search for "ANSWERS" or "Correct answer"</li>
+                    <li>See comments like: <code>Question 1: Correct answer is option 2</code></li>
+                    <li>Go back and select all correct answers</li>
+                    <li>Submit and get 100%!</li>
+                </ul>
+                <div class="warning" style="margin-top: 30px;">
+                    <p><strong>Why it works:</strong> Application sends answers to browser, hoping users won't look</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: Code Example - Vulnerable -->
+        <div class="slide" data-notes="Here's what the vulnerable code looks like. See how the template receives the entire quiz object, including the 'correct' field? That's sent straight to the browser where anyone can view it.">
+            <h2>The Vulnerable Code</h2>
+            <div class="content">
+                <div class="code-block">
+# Python Flask Backend
+@app.route('/exam/&lt;int:quiz_id&gt;')
+def start_exam(quiz_id):
+    quiz = quizzes[quiz_id]
+    # Sending EVERYTHING including answers!
+    return render_template('exam.html', quiz=quiz)
+
+# Quiz data structure:
+{
+    'question': 'What is 2**3?',
+    'options': ['6', '8', '9', '5'],
+    'correct': 1  # ← EXPOSED TO CLIENT!
+}
+                </div>
+                <p style="margin-top: 20px; font-size: 1.4rem; color: #e74c3c;">
+                    <strong>The problem:</strong> Sending sensitive data to untrusted client
+                </p>
+            </div>
+        </div>
+
+        <!-- Slide 10: Vulnerability 2 - Timer -->
+        <div class="slide" data-notes="The timer runs entirely in JavaScript in your browser. Press F12, go to Sources tab, click the pause button, and the timer freezes. Take as long as you want. This is why time validation MUST be server-side.">
+            <h2>Vuln #2: Client-Side Timer</h2>
+            <div class="content">
+                <h3>The Flaw: Timer runs in JavaScript (your browser)</h3>
+                <div class="two-column">
+                    <div>
+                        <p><strong>Method 1: Pause JavaScript</strong></p>
+                        <ul style="font-size: 1.3rem;">
+                            <li>Press F12</li>
+                            <li>Go to Sources tab</li>
+                            <li>Click pause button (⏸️)</li>
+                            <li>Timer freezes!</li>
+                            <li>Take unlimited time</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <p><strong>Method 2: Modify Variable</strong></p>
+                        <ul style="font-size: 1.3rem;">
+                            <li>Press F12 → Console</li>
+                            <li>Type: <code>duration = 999999</code></li>
+                            <li>Press Enter</li>
+                            <li>Timer shows 16,666 minutes!</li>
+                        </ul>
+                    </div>
+                </div>
+                <p style="margin-top: 30px; text-align: center; font-size: 1.4rem; color: #ffd700;">
+                    <strong>Impact:</strong> 5-minute exam? Take 5 hours!
+                </p>
+            </div>
+        </div>
+
+        <!-- Slide 11: Vulnerability 3 - No Time Validation -->
+        <div class="slide" data-notes="Even better: even if the timer expires and shows 'Time's Up!', you can still submit! The server doesn't validate time at all. Students can submit hours or even days after time expires.">
+            <h2>Vuln #3: No Server-Side Time Validation</h2>
+            <div class="content">
+                <div class="lab-instruction">
+                    <p><strong>The Flaw:</strong> Server never checks if time expired</p>
+                </div>
+                <h3>How to Exploit:</h3>
+                <ul>
+                    <li>Start a 5-minute quiz</li>
+                    <li>Wait for timer to reach 0:00</li>
+                    <li>Timer shows "Time's Up!" in red</li>
+                    <li><span class="highlight">But the form still works!</span></li>
+                    <li>Select your answers (use page source to cheat)</li>
+                    <li>Click "Submit Exam"</li>
+                    <li>Submission accepted! Score calculated normally!</li>
+                </ul>
+                <div class="warning" style="margin-top: 30px;">
+                    <p><strong>Tested:</strong> Submit 10 minutes, 1 hour, even next day - all work!</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 12: Real-World Case Study 1 -->
+        <div class="slide" data-notes="This actually happened in 2021. A major university moved exams online during COVID. Students discovered the timer could be paused. 300+ students exploited it. Some took 5 hours on 2-hour exams. Cost the university $200,000 and all exams had to be invalidated.">
+            <h2>Real-World Impact 🚨</h2>
+            <div class="content">
+                <div class="case-study">
+                    <h3 style="color: #e74c3c;">Case Study: University Exam Breach (2021)</h3>
+                    <p><strong>Institution:</strong> Major US University</p>
+                    <p><strong>Students Affected:</strong> 1,200+</p>
+                    <p style="margin-top: 20px;"><strong>What Happened:</strong></p>
+                    <ul style="margin-top: 15px;">
+                        <li>Students discovered timer could be paused</li>
+                        <li>Word spread via social media</li>
+                        <li>300+ students exploited the flaw</li>
+                        <li>Some took 4-5 hours on 2-hour exams</li>
+                    </ul>
+                    <p style="margin-top: 20px;"><strong>Consequences:</strong></p>
+                    <ul style="margin-top: 15px;">
+                        <li>All exams invalidated</li>
+                        <li>$200,000 investigation cost</li>
+                        <li>15 students suspended</li>
+                        <li>Massive reputation damage</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 13: Real-World Case Study 2 -->
+        <div class="slide" data-notes="Even worse: a certification provider had answers in page source. 500+ people got fraudulent IT certifications. Unqualified people were hired for network admin roles. Cost $2.5 million in refunds and lawsuits from employers.">
+            <h2>Real-World Impact 🚨</h2>
+            <div class="content">
+                <div class="case-study">
+                    <h3 style="color: #e74c3c;">Case Study: Certification Fraud (2019)</h3>
+                    <p><strong>Organization:</strong> IT Certification Provider</p>
+                    <p><strong>Financial Loss:</strong> $2.5 million</p>
+                    <p style="margin-top: 20px;"><strong>What Happened:</strong></p>
+                    <ul style="margin-top: 15px;">
+                        <li>Professional cert exam had answers in page source</li>
+                        <li>Posted on underground forums</li>
+                        <li>500+ fraudulent certifications issued</li>
+                        <li>Unqualified people hired for critical roles</li>
+                    </ul>
+                    <p style="margin-top: 20px;"><strong>Consequences:</strong></p>
+                    <ul style="margin-top: 15px;">
+                        <li>All certifications from 6 months invalidated</li>
+                        <li>Lawsuits from employers</li>
+                        <li>Criminal charges for fraud ring</li>
+                        <li>Company reputation destroyed</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 14: Vulnerability 4 - Quiz ID -->
+        <div class="slide" data-notes="You can switch quizzes mid-exam by just changing the URL. Start a hard quiz, change /exam/2 to /exam/1, and you're taking an easier quiz but still get credit for the hard one. Classic IDOR vulnerability.">
+            <h2>Vuln #4: Quiz ID Manipulation</h2>
+            <div class="content">
+                <h3>IDOR - Insecure Direct Object Reference</h3>
+                <div class="lab-instruction">
+                    <p><strong>The Flaw:</strong> Quiz ID can be changed in URL or form</p>
+                </div>
+                <h3>How to Exploit:</h3>
+                <ul>
+                    <li>Start Quiz #1: <code>http://localhost:5000/exam/1</code></li>
+                    <li>Change URL to: <code>http://localhost:5000/exam/2</code></li>
+                    <li>You're now taking a different quiz!</li>
+                    <li>Or modify hidden field: <code>&lt;input name="quiz_id" value="1"&gt;</code></li>
+                    <li>Change to <code>value="2"</code> before submitting</li>
+                </ul>
+                <p style="margin-top: 30px; text-align: center; font-size: 1.6rem; color: #ffd700;">
+                    <strong>Creative exploit:</strong> Start hard quiz, switch to easy one, get credit for hard!
+                </p>
+            </div>
+        </div>
+
+        <!-- Slide 15: Vulnerability 5 - Unlimited Retakes -->
+        <div class="slide" data-notes="The simplest vulnerability: no attempt limit. Take the same quiz 100 times if you want. Each time you learn which answers were wrong. Eventually you'll get 100% through pure brute force, even without knowing the material.">
+            <h2>Vuln #5: Unlimited Retakes</h2>
+            <div class="content">
+                <h3>The Brute Force Method</h3>
+                <ul>
+                    <li><strong>Attempt 1:</strong> Take quiz, guess randomly, get 40%</li>
+                    <li><strong>Attempt 2:</strong> Retake immediately (no cooldown!)</li>
+                    <li><strong>Attempt 3:</strong> Try different answers for wrong ones</li>
+                    <li><strong>Attempt 4-5:</strong> Narrow down through elimination</li>
+                    <li><strong>Result:</strong> Eventually get 100% without studying!</li>
+                </ul>
+                <div class="warning" style="margin-top: 40px;">
+                    <p style="font-size: 1.5rem;"><strong>Real example:</strong> UK driving test system (2019) - Drivers with multiple DUIs passed after 20+ retakes</p>
+                </div>
+                <p style="margin-top: 30px; text-align: center; font-size: 1.4rem;">
+                    <strong>No tracking, no limits, no cooldown!</strong>
+                </p>
+            </div>
+        </div>
+
+        <!-- Slide 16: Combined Attack -->
+        <div class="slide" data-notes="Now combine multiple vulnerabilities for maximum impact. View answers in source, pause the timer, modify duration, take unlimited time, and get 100%. This is what makes business logic flaws so dangerous - they stack.">
+            <h2>💥 The Ultimate Combined Attack 💥</h2>
+            <div class="content">
+                <h3>Using Multiple Vulnerabilities Together:</h3>
+                <div class="lab-instruction">
+                    <p><strong>Step 1:</strong> Start quiz</p>
+                </div>
+                <div class="lab-instruction">
+                    <p><strong>Step 2:</strong> View page source (Ctrl+U) → Find all answers</p>
+                </div>
+                <div class="lab-instruction">
+                    <p><strong>Step 3:</strong> Press F12 → Sources → Pause JavaScript</p>
+                </div>
+                <div class="lab-instruction">
+                    <p><strong>Step 4:</strong> Console: <code>duration = 999999</code></p>
+                </div>
+                <div class="lab-instruction">
+                    <p><strong>Step 5:</strong> Take unlimited time selecting correct answers</p>
+                </div>
+                <div class="lab-instruction">
+                    <p><strong>Step 6:</strong> Submit and get 100%!</p>
+                </div>
+                <p style="margin-top: 30px; text-align: center; font-size: 1.8rem; color: #2ecc71;">
+                    <strong>✓ Perfect score every time!</strong>
+                </p>
+            </div>
+        </div>
+
+        <!-- Slide 17: How to Fix It -->
+        <div class="slide" data-notes="Here's the fix: NEVER send answers to the client. Only send what they need to see: the questions and options. Keep the correct answers on the server. This one change fixes the biggest vulnerability.">
+            <h2>Defense #1: Remove Answers from Client</h2>
+            <div class="content">
+                <div class="comparison">
+                    <div class="bad">
+                        <h3 style="font-size: 1.4rem; margin-bottom: 15px;">❌ VULNERABLE</h3>
+                        <div class="code-block" style="font-size: 1rem; padding: 15px;">
+quiz = {
+  'question': 'What is 2**3?',
+  'options': ['6','8','9','5'],
+  'correct': 1  # EXPOSED!
+}
+return render(quiz)
+                        </div>
+                    </div>
+                    <div class="good">
+                        <h3 style="font-size: 1.4rem; margin-bottom: 15px;">✅ SECURE</h3>
+                        <div class="code-block" style="font-size: 1rem; padding: 15px;">
+safe_quiz = {
+  'question': 'What is 2**3?',
+  'options': ['6','8','9','5']
+  # NO 'correct' field!
+}
+return render(safe_quiz)
+                        </div>
+                    </div>
+                </div>
+                <p style="margin-top: 30px; text-align: center; font-size: 1.6rem; color: #ffd700;">
+                    <strong>Golden Rule: Only send what the client NEEDS to see</strong>
+                </p>
+            </div>
+        </div>
+
+        <!-- Slide 18: Server-Side Validation -->
+        <div class="slide" data-notes="Time validation MUST happen on the server. Store start time on server, not client. When they submit, check elapsed time on server. Reject if time expired. Add a small grace period for network delay.">
+            <h2>Defense #2: Server-Side Time Validation</h2>
+            <div class="content">
+                <div class="code-block" style="font-size: 1.1rem;">
+@app.route('/submit_exam', methods=['POST'])
+def submit_exam():
+    session_id = request.form.get('session_id')
+    
+    # Get session from SERVER storage
+    exam_data = exam_sessions[session_id]
+    
+    # VALIDATE TIME ON SERVER
+    elapsed = time.time() - exam_data['start_time']
+    allowed = exam_data['duration']
+    
+    if elapsed > (allowed + 5):  # 5 sec grace period
+        return "Time expired!", 400
+    
+    # NOW process answers...
+                </div>
+                <p style="margin-top: 20px; font-size: 1.4rem;">
+                    <strong>Key points:</strong> Store time on server, validate on server, add grace period for network latency
+                </p>
+            </div>
+        </div>
+
+        <!-- Slide 19: The Golden Rules -->
+        <div class="slide" data-notes="Three rules to remember. Write these down. Tattoo them on your arm. These prevent 90% of business logic vulnerabilities.">
+            <h2>🔐 The Golden Rules 🔐</h2>
+            <div class="content" style="text-align: center;">
+                <div style="background: rgba(255, 215, 0, 0.3); padding: 50px; border-radius: 20px; border: 5px solid #ffd700; margin: 30px 0;">
+                    <h3 style="font-size: 2.5rem; margin-bottom: 30px;">Rule #1</h3>
+                    <p style="font-size: 2rem; font-weight: bold;">NEVER TRUST CLIENT INPUT</p>
+                    <p style="font-size: 1.5rem; margin-top: 20px; color: #ffd700;">EVER.</p>
+                </div>
+                <div style="background: rgba(255, 215, 0, 0.3); padding: 50px; border-radius: 20px; border: 5px solid #ffd700; margin: 30px 0;">
+                    <h3 style="font-size: 2.5rem; margin-bottom: 30px;">Rule #2</h3>
+                    <p style="font-size: 2rem; font-weight: bold;">ALWAYS VALIDATE SERVER-SIDE</p>
+                </div>
+                <div style="background: rgba(255, 215, 0, 0.3); padding: 50px; border-radius: 20px; border: 5px solid #ffd700; margin: 30px 0;">
+                    <h3 style="font-size: 2.5rem; margin-bottom: 30px;">Rule #3</h3>
+                    <p style="font-size: 2rem; font-weight: bold;">DEFENSE IN DEPTH</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 20: Lab Time! -->
+        <div class="slide" data-notes="Alright! Theory is done. Time to get hands-on. You'll exploit this vulnerable exam platform. Find the flaws, exploit them, understand the impact. This is a safe, controlled environment designed for learning.">
+            <h2>🔬 Lab Time! 🔬</h2>
+            <div class="content" style="text-align: center;">
+                <div class="emoji" style="font-size: 6rem;">💻</div>
+                <h3 style="text-align: center;">Your Mission:</h3>
+                <div style="background: rgba(52, 152, 219, 0.3); padding: 40px; border-radius: 20px; margin: 40px 0; border: 3px solid #3498db;">
+                    <ul style="text-align: left; font-size: 1.4rem;">
+                        <li>✅ Find answers in page source</li>
+                        <li>✅ Pause the exam timer</li>
+                        <li>✅ Submit after time expires</li>
+                        <li>✅ Switch between quizzes</li>
+                        <li>✅ Retake exams unlimited times</li>
+                        <li>✅ Combine vulnerabilities for maximum impact</li>
+                        <li>✅ Document your findings</li>
+                    </ul>
+                </div>
+                <p style="font-size: 1.6rem; color: #ffd700; margin-top: 30px;">
+                    <strong>URL:</strong> http://localhost:5000
+                </p>
+            </div>
+        </div>
+
+        <!-- Slide 21: Lab Exercise 1 -->
+        <div class="slide" data-notes="First exercise: Find answers in page source. This is the easiest one - takes 30 seconds. Login, start quiz, view source, search for answers. That's it!">
+            <h2>Lab Exercise 1: Answer Discovery</h2>
+            <div class="content">
+                <h3 style="color: #ffd700;">Goal: Find all answers and get 100%</h3>
+                <div class="lab-instruction">
+                    <p><strong>Difficulty:</strong> ⭐ EASY (2 minutes)</p>
+                </div>
+                <h3>Steps:</h3>
+                <ul style="font-size: 1.3rem;">
+                    <li>Login as student1 / pass123</li>
+                    <li>Click "Take Quiz" → Start Python Basics</li>
+                    <li>Right-click → "View Page Source" (Ctrl+U)</li>
+                    <li>Search for "ANSWERS" (Ctrl+F)</li>
+                    <li>Find comments with correct answers</li>
+                    <li>Go back to quiz and select correct options</li>
+                    <li>Submit and verify 100% score!</li>
+                </ul>
+                <div style="background: rgba(46, 204, 113, 0.3); padding: 20px; border-radius: 10px; margin-top: 30px;">
+                    <p style="font-size: 1.3rem;"><strong>Success Criteria:</strong> Achieved 100% score using page source</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 22: Lab Exercise 2 -->
+        <div class="slide" data-notes="Second exercise: Timer manipulation. Open DevTools, go to Sources, click pause. Timer freezes. Take as long as you want. This shows why client-side timers are useless for security.">
+            <h2>Lab Exercise 2: Timer Bypass</h2>
+            <div class="content">
+                <h3 style="color: #ffd700;">Goal: Complete 5-min quiz in 20+ minutes</h3>
+                <div class="lab-instruction">
+                    <p><strong>Difficulty:</strong> ⭐⭐ MEDIUM (5 minutes)</p>
+                </div>
+                <h3>Steps:</h3>
+                <ul style="font-size: 1.3rem;">
+                    <li>Start Python Basics quiz (5 minutes)</li>
+                    <li>Press F12 to open DevTools</li>
+                    <li>Go to "Sources" tab</li>
+                    <li>Click pause button (⏸️) or press F8</li>
+                    <li>Observe: Timer freezes!</li>
+                    <li>Take 20+ minutes answering questions</li>
+                    <li>Press F8 to resume</li>
+                    <li>Submit exam successfully</li>
+                </ul>
+                <div style="background: rgba(46, 204, 113, 0.3); padding: 20px; border-radius: 10px; margin-top: 30px;">
+                    <p style="font-size: 1.3rem;"><strong>Success Criteria:</strong> Submission accepted after exceeding time limit</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 23: Lab Exercise 3 -->
+        <div class="slide" data-notes="Third exercise: Submit after time expires. Just wait for timer to hit zero. It shows 'Time's Up!' but the form still works. Click submit and it's accepted. Zero server-side validation.">
+            <h2>Lab Exercise 3: Time Expiry Bypass</h2>
+            <div class="content">
+                <h3 style="color: #ffd700;">Goal: Submit exam after timer expires</h3>
+                <div class="lab-instruction">
+                    <p><strong>Difficulty:</strong> ⭐ TRIVIAL (6 minutes)</p>
+                </div>
+                <h3>Steps:</h3>
+                <ul style="font-size: 1.3rem;">
+                    <li>Start Python Basics quiz (5 minutes)</li>
+                    <li>Do NOT answer anything - just watch timer</li>
+                    <li>Wait for timer to reach 0:00</li>
+                    <li>Timer shows "Time's Up!" in red</li>
+                    <li>Form is still active!</li>
+                    <li>Now answer questions (use page source method)</li>
+                    <li>Click "Submit Exam"</li>
+                    <li>Submission accepted! Score calculated!</li>
+                </ul>
+                <div style="background: rgba(46, 204, 113, 0.3); padding: 20px; border-radius: 10px; margin-top: 30px;">
+                    <p style="font-size: 1.3rem;"><strong>Bonus:</strong> Try submitting 1 hour later - still works!</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 24: Lab Exercise 4 -->
+        <div class="slide" data-notes="Fourth exercise: Combined attack. Use everything together. View answers, pause timer, take unlimited time, get 100%. This is the ultimate exploitation of business logic flaws.">
+            <h2>Lab Exercise 4: Combined Attack</h2>
+            <div class="content">
+                <h3 style="color: #ffd700;">Goal: Use multiple vulnerabilities together</h3>
+                <div class="lab-instruction">
+                    <p><strong>Difficulty:</strong> ⭐⭐⭐ ADVANCED (10 minutes)</p>
+                </div>
+                <h3>Complete Attack Chain:</h3>
+                <ul style="font-size: 1.3rem;">
+                    <li>Start Web Security quiz</li>
+                    <li>View page source → Find all answers</li>
+                    <li>F12 → Sources → Pause JavaScript</li>
+                    <li>F12 → Console → Type: <code>duration = 999999</code></li>
+                    <li>Take unlimited time</li>
+                    <li>Select all correct answers from source</li>
+                    <li>Submit and get 100%</li>
+                    <li>Document which vulnerabilities you used</li>
+                </ul>
+                <div style="background: rgba(46, 204, 113, 0.3); padding: 20px; border-radius: 10px; margin-top: 30px;">
+                    <p style="font-size: 1.3rem;"><strong>Challenge:</strong> Can you combine 4+ vulnerabilities?</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 25: Key Takeaways -->
+        <div class="slide" data-notes="Let's wrap up with key takeaways. These are the critical lessons. Business logic flaws are everywhere, easy to exploit, hard to detect. Client-side security isn't security. Always validate server-side.">
+            <h2>🎯 Key Takeaways</h2>
+            <div class="content">
+                <ul style="font-size: 1.5rem;">
+                    <li><strong class="highlight">Business logic flaws are everywhere</strong> - Not just theoretical</li>
+                    <li><strong>Easy to exploit</strong> - Most require just F12 and basic knowledge</li>
+                    <li><strong>Hard to detect</strong> - Automated scanners miss them</li>
+                    <li><strong>High impact</strong> - Can compromise entire systems</li>
+                    <li><strong>Client-side ≠ Security</strong> - JavaScript validation is UX, not security</li>
+                    <li><strong>Server-side validation is mandatory</strong> - For EVERYTHING</li>
+                    <li><strong>Never trust client input</strong> - This prevents 90% of issues</li>
+                    <li><strong>Defense in depth</strong> - Multiple layers of security</li>
+                    <li><strong>Think like an attacker</strong> - Question every assumption</li>
+                    <li><strong>Test everything</strong> - Every parameter is a potential target</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Slide 26: Real-World Statistics -->
+        <div class="slide" data-notes="Here are the real numbers. 68% of students admit to cheating on online exams. 43% of exam systems have critical flaws. $600 million annual loss globally from fraudulent certifications. This is a massive problem.">
+            <h2>The Numbers Don't Lie 📊</h2>
+            <div class="content">
+                <h3>Online Exam Security Statistics:</h3>
+                <div class="two-column">
+                    <div style="text-align: center;">
+                        <p style="font-size: 4rem; font-weight: bold; color: #e74c3c;">68%</p>
+                        <p style="font-size: 1.3rem;">Students admit to cheating on online exams</p>
+                    </div>
+                    <div style="text-align: center;">
+                        <p style="font-size: 4rem; font-weight: bold; color: #e74c3c;">43%</p>
+                        <p style="font-size: 1.3rem;">Online exam systems have critical vulnerabilities</p>
+                    </div>
+                </div>
+                <div class="two-column" style="margin-top: 40px;">
+                    <div style="text-align: center;">
+                        <p style="font-size: 4rem; font-weight: bold; color: #e74c3c;">$600M</p>
+                        <p style="font-size: 1.3rem;">Annual loss to fraudulent certifications globally</p>
+                    </div>
+                    <div style="text-align: center;">
+                        <p style="font-size: 4rem; font-weight: bold; color: #e74c3c;">12%</p>
+                        <p style="font-size: 1.3rem;">Detection rate for online exam fraud</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 27: Ethical Considerations -->
+        <div class="slide" data-notes="CRITICAL reminder: You now have powerful knowledge. Use it responsibly. ONLY test authorized systems. Unauthorized access is illegal - criminal charges, fines, jail time. You're learning to PROTECT, not attack.">
+            <h2>⚖️ Ethical Considerations</h2>
+            <div class="content">
+                <div class="warning" style="padding: 40px;">
+                    <h3 style="margin-bottom: 30px; font-size: 2rem;">🚨 CRITICAL REMINDERS 🚨</h3>
+                    <ul style="font-size: 1.5rem;">
+                        <li><strong>ONLY test authorized systems</strong> - Written permission required</li>
+                        <li><strong>Unauthorized access is ILLEGAL</strong> - Criminal charges possible</li>
+                        <li><strong>Use knowledge responsibly</strong> - To defend, not attack</li>
+                        <li><strong>Report vulnerabilities properly</strong> - Responsible disclosure</li>
+                        <li><strong>Respect privacy</strong> - Don't access others' data</li>
+                        <li><strong>Academic integrity matters</strong> - Don't cheat on real exams!</li>
+                    </ul>
+                </div>
+                <p style="margin-top: 40px; text-align: center; font-size: 1.8rem; color: #ffd700;">
+                    <strong>You are security professionals who PROTECT systems and users!</strong>
+                </p>
+            </div>
+        </div>
+
+        <!-- Slide 28: Career Paths -->
+        <div class="slide" data-notes="If this interests you, there are amazing career paths in cybersecurity. Penetration testing, security engineering, bug bounty hunting, consulting. High demand, great pay, interesting work.">
+            <h2>Career Opportunities 💼</h2>
+            <div class="content">
+                <h3>Security Careers Using These Skills:</h3>
+                <div class="two-column">
+                    <div>
+                        <ul>
+                            <li><strong>Penetration Tester</strong> - Find vulnerabilities professionally</li>
+                            <li><strong>Security Engineer</strong> - Build secure systems</li>
+                            <li><strong>Bug Bounty Hunter</strong> - Earn money finding bugs</li>
+                            <li><strong>Security Consultant</strong> - Advise organizations</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <ul>
+                            <li><strong>Incident Responder</strong> - Handle security breaches</li>
+                            <li><strong>Security Researcher</strong> - Discover new vulnerabilities</li>
+                            <li><strong>AppSec Engineer</strong> - Secure applications</li>
+                            <li><strong>Ethical Hacker</strong> - Authorized testing</li>
+                        </ul>
+                    </div>
+                </div>
+                <div style="background: rgba(52, 152, 219, 0.3); padding: 30px; border-radius: 10px; margin-top: 40px;">
+                    <p style="font-size: 1.4rem; text-align: center;"><strong>Average Salary:</strong> $80,000 - $150,000+</p>
+                    <p style="font-size: 1.4rem; text-align: center; margin-top: 10px;"><strong>Job Growth:</strong> 31% through 2029 (much faster than average)</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 29: Resources -->
+        <div class="slide" data-notes="Want to learn more? Here are the best resources. PortSwigger Academy is free and excellent. HackTheBox and TryHackMe for practice. OWASP for standards. Burp Suite for tools.">
+            <h2>📚 Resources for Continued Learning</h2>
+            <div class="content">
+                <div class="two-column">
+                    <div>
+                        <h3 style="font-size: 1.5rem;">Free Training:</h3>
+                        <ul style="font-size: 1.2rem;">
+                            <li><strong>PortSwigger Web Security Academy</strong> - Best free resource</li>
+                            <li><strong>OWASP Top 10</strong> - Industry standards</li>
+                            <li><strong>HackTheBox</strong> - Practice platform</li>
+                            <li><strong>TryHackMe</strong> - Guided learning</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 style="font-size: 1.5rem;">Tools:</h3>
+                        <ul style="font-size: 1.2rem;">
+                            <li><strong>Burp Suite</strong> - Essential for web testing</li>
+                            <li><strong>OWASP ZAP</strong> - Free alternative</li>
+                            <li><strong>Browser DevTools</strong> - Built-in (F12)</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="two-column" style="margin-top: 30px;">
+                    <div>
+                        <h3 style="font-size: 1.5rem;">Practice Apps:</h3>
+                        <ul style="font-size: 1.2rem;">
+                            <li><strong>DVWA</strong> - Vulnerable web app</li>
+                            <li><strong>WebGoat</strong> - OWASP training</li>
+                            <li><strong>Juice Shop</strong> - Modern vulnerabilities</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 style="font-size: 1.5rem;">Certifications:</h3>
+                        <ul style="font-size: 1.2rem;">
+                            <li><strong>CEH</strong> - Certified Ethical Hacker</li>
+                            <li><strong>OSCP</strong> - Offensive Security</li>
+                            <li><strong>GWAPT</strong> - Web App Pen Testing</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 30: Q&A -->
+        <div class="slide" data-notes="Open the floor for questions. Encourage discussion. Make sure everyone understands before starting the lab. Address any concerns about ethics or legality.">
+            <h2>❓ Questions & Discussion</h2>
+            <div class="content" style="text-align: center;">
+                <div class="emoji" style="font-size: 8rem;">💬</div>
+                <h3 style="margin-top: 40px; font-size: 2rem;">Now is your chance to ask!</h3>
+                <div style="background: rgba(255,255,255,0.1); padding: 40px; border-radius: 20px; margin: 40px 0;">
+                    <p style="font-size: 1.6rem; margin-bottom: 30px;">Common questions:</p>
+                    <ul style="font-size: 1.3rem; text-align: left;">
+                        <li>How common are these vulnerabilities in real apps?</li>
+                        <li>What's the legal risk of unauthorized testing?</li>
+                        <li>How do I report vulnerabilities responsibly?</li>
+                        <li>What tools should I learn first?</li>
+                        <li>How do I get started in bug bounty?</li>
+                        <li>What's the career path in security?</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 31: Let's Begin! -->
+        <div class="slide" data-notes="Alright everyone! Theory done. Now get hands-on. Access the lab, follow the exercises, exploit the vulnerabilities. Remember - controlled environment, educational purposes only. Have fun, learn lots!">
+            <h2>🚀 Let's Start the Lab! 🚀</h2>
+            <div class="content" style="text-align: center;">
+                <div class="emoji" style="font-size: 10rem;">💻🔓</div>
+                <div style="background: rgba(52, 152, 219, 0.3); padding: 50px; border-radius: 20px; margin: 40px 0; border: 3px solid #3498db;">
+                    <h3 style="font-size: 2rem; margin-bottom: 30px;">Lab Information:</h3>
+                    <p style="font-size: 1.8rem; margin: 20px 0;"><strong>URL:</strong> http://localhost:5000</p>
+                    <p style="font-size: 1.8rem; margin: 20px 0;"><strong>Username:</strong> student1</p>
+                    <p style="font-size: 1.8rem; margin: 20px 0;"><strong>Password:</strong> pass123</p>
+                    <p style="font-size: 1.6rem; margin: 30px 0; color: #ffd700;">
+                        <strong>Duration:</strong> 20 minutes
+                    </p>
+                </div>
+                <p style="font-size: 2rem; margin-top: 40px; color: #2ecc71;">
+                    <strong>Good luck! Let's hack (ethically)! 🎯</strong>
+                </p>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="slide-number" id="slideNumber">1 / 31</div>
+    
+    <div class="controls">
+        <button onclick="previousSlide()">← Previous</button>
+        <button onclick="nextSlide()">Next →</button>
+    </div>
+
+    <button class="notes-toggle" onclick="toggleNotes()">📝 Speaker Notes</button>
+    <div class="speaker-notes" id="speakerNotes"></div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        let notesVisible = false;
+
+        function showSlide(n) {
+            slides[currentSlide].classList.remove('active');
+            currentSlide = (n + totalSlides) % totalSlides;
+            slides[currentSlide].classList.add('active');
+            document.getElementById('slideNumber').textContent = `${currentSlide + 1} / ${totalSlides}`;
+            
+            // Update speaker notes
+            const notes = slides[currentSlide].getAttribute('data-notes');
+            document.getElementById('speakerNotes').textContent = notes || 'No notes for this slide';
+        }
+
+        function nextSlide() {
+            showSlide(currentSlide + 1);
+        }
+
+        function previousSlide() {
+            showSlide(currentSlide - 1);
+        }
+
+        function toggleNotes() {
+            notesVisible = !notesVisible;
+            const notesElement = document.getElementById('speakerNotes');
+            notesElement.classList.toggle('show', notesVisible);
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                e.preventDefault();
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                previousSlide();
+            } else if (e.key === 'n' || e.key === 'N') {
+                toggleNotes();
+            } else if (e.key === 'f' || e.key === 'F') {
+                if (document.fullscreenElement) {
+                    document.exitFullscreen();
+                } else {
+                    document.documentElement.requestFullscreen();
+                }
+            } else if (e.key === 'Home') {
+                showSlide(0);
+            } else if (e.key === 'End') {
+                showSlide(totalSlides - 1);
+            }
+        });
+
+        // Click to advance
+        document.querySelector('.presentation').addEventListener('click', (e) => {
+            if (!e.target.closest('.controls') && !e.target.closest('.notes-toggle')) {
+                nextSlide();
+            }
+        });
+
+        // Initialize
+        showSlide(0);
+
+        // Prevent context menu on presentation
+        document.querySelector('.presentation').addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
+    </script>
+</body>
+</html>
